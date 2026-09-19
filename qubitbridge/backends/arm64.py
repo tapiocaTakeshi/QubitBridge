@@ -231,6 +231,12 @@ NEON_KERNELS: tuple[_Kernel, ...] = (
         "qb_neg", ("in", "out"), loads=(A_R,), stores=(T0,),
         body=(("fneg", T0, A_R),), doc="NEG"),
     _Kernel(
+        "qb_min", ("in", "in", "out"), loads=(A_R, B_R), stores=(T0,),
+        body=(("fmin", T0, A_R, B_R),), doc="MIN"),
+    _Kernel(
+        "qb_max", ("in", "in", "out"), loads=(A_R, B_R), stores=(T0,),
+        body=(("fmax", T0, A_R, B_R),), doc="MAX"),
+    _Kernel(
         "qb_scale", ("in", "fp", "out"), loads=(A_R,), stores=(T0,),
         body=(("dup", _FP, 0), ("fmul", T0, A_R, _FP)),
         doc="SCALE: out = in * c (c in d0)"),
@@ -506,9 +512,10 @@ def _emit_instr(drv: _Driver, instr: Instr) -> None:
         drv.call("qb_copy", [("r", a), ("r", d)])
     elif op is Op.LDI:
         drv.call("qb_splat", [("r", d)], const=imm)
-    elif op in (Op.ADD, Op.SUB, Op.MUL, Op.DIV):
+    elif op in (Op.ADD, Op.SUB, Op.MUL, Op.DIV, Op.MIN, Op.MAX):
         kernel = {Op.ADD: "qb_add", Op.SUB: "qb_sub",
-                  Op.MUL: "qb_fmul", Op.DIV: "qb_fdiv"}[op]
+                  Op.MUL: "qb_fmul", Op.DIV: "qb_fdiv",
+                  Op.MIN: "qb_min", Op.MAX: "qb_max"}[op]
         drv.call(kernel, [("r", a), ("r", b), ("r", d)])
     elif op is Op.NEG:
         drv.call("qb_neg", [("r", a), ("r", d)])

@@ -44,6 +44,8 @@ print(module.to_text())          # prints back to the same text
 | `arith.mul` | f64, f64 | `f64` | -- | x * y |
 | `arith.div` | f64, f64 | `f64` | -- | x / y |
 | `arith.neg` | f64 | `f64` | -- | -x |
+| `arith.min` | f64, f64 | `f64` | -- | min(x, y) |
+| `arith.max` | f64, f64 | `f64` | -- | max(x, y) |
 | `arith.tanh` | f64 | `f64` | -- | tanh(x) |
 | `arith.atanh` | f64 | `f64` | -- | atanh(x) |
 | `apqb.encode` | f64 | `!apqb.state` | `mode` | classical scalar -> pseudo qubit |

@@ -33,6 +33,10 @@ def evaluate(func: Func, args: list[float]) -> list[float]:
             out = ins[0] * ins[1]
         elif name == "arith.div":
             out = ins[0] / ins[1]
+        elif name == "arith.min":
+            out = min(ins[0], ins[1])
+        elif name == "arith.max":
+            out = max(ins[0], ins[1])
         elif name == "arith.neg":
             out = -ins[0]
         elif name == "arith.tanh":

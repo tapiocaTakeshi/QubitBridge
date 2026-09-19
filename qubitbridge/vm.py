@@ -162,6 +162,10 @@ class QVM:
                 rfile[d] = be.div(rfile[a], rfile[b])
             elif op is Op.NEG:
                 rfile[d] = be.neg(rfile[a])
+            elif op is Op.MIN:
+                rfile[d] = be.minimum(rfile[a], rfile[b])
+            elif op is Op.MAX:
+                rfile[d] = be.maximum(rfile[a], rfile[b])
             elif op is Op.TANH:
                 rfile[d] = be.tanh(rfile[a])
             elif op is Op.ATANH:

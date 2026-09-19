@@ -47,6 +47,8 @@ EVERY_OP = """
         MUL       R13, R0, R1
         DIV       R14, R0, R1
         NEG       R15, R0
+        MIN       R22, R0, R1
+        MAX       R23, R0, R1
         TANH      R16, R0
         ATANH     R17, R2
         SCALE     R18, R0, 3.5

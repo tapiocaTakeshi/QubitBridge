@@ -79,6 +79,8 @@ OP_SPECS: dict[str, OpSpec] = {s.name: s for s in (
     _spec("arith.mul", (F64, F64), F64, (), "x * y"),
     _spec("arith.div", (F64, F64), F64, (), "x / y"),
     _spec("arith.neg", (F64,), F64, (), "-x"),
+    _spec("arith.min", (F64, F64), F64, (), "min(x, y)"),
+    _spec("arith.max", (F64, F64), F64, (), "max(x, y)"),
     _spec("arith.tanh", (F64,), F64, (), "tanh(x)"),
     _spec("arith.atanh", (F64,), F64, (), "atanh(x)"),
 

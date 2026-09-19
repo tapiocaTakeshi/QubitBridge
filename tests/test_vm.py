@@ -38,6 +38,8 @@ ALL_OPS = """
         MUL       R13, R0, R1
         DIV       R14, R0, R1
         NEG       R15, R0
+        MIN       R23, R0, R1
+        MAX       R24, R0, R1
         TANH      R16, R0
         ATANH     R17, R2
         SCALE     R18, R0, 3.5
@@ -73,6 +75,8 @@ class TestExecution(unittest.TestCase):
         self.assertAlmostEqual(result.r[13][0], x * y, places=12)
         self.assertAlmostEqual(result.r[18][0], x * 3.5, places=12)
         self.assertAlmostEqual(result.r[21][0], 7.25, places=12)
+        self.assertAlmostEqual(result.r[23][0], min(x, y), places=12)
+        self.assertAlmostEqual(result.r[24][0], max(x, y), places=12)
         self.assertAlmostEqual(result.state(4).r, q4.r, places=12)
 
     def test_qstore_writes_r_then_eta(self):
@@ -182,7 +186,7 @@ class TestBackendAgreement(unittest.TestCase):
         seeds = {0: [0.6, -1.4, 0.0, 0.9], 1: [-0.4, 0.8, 1.0, -1.0]}
         runs = [QVM(backend=name, seed=5).run(prog, r_inputs=seeds, lanes=4)
                 for name in names]
-        for index in range(23):
+        for index in range(25):
             for other in runs[1:]:
                 for got, want in zip(other.r[index], runs[0].r[index]):
                     self.assertAlmostEqual(got, want, places=11,

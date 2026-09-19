@@ -59,6 +59,8 @@ class Backend:
     def mul(self, x, y): raise NotImplementedError
     def div(self, x, y): raise NotImplementedError
     def neg(self, x): raise NotImplementedError
+    def minimum(self, x, y): raise NotImplementedError
+    def maximum(self, x, y): raise NotImplementedError
     def tanh(self, x): raise NotImplementedError
     def atanh(self, x): raise NotImplementedError
     def scale(self, x, c: float): raise NotImplementedError

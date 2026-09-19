@@ -100,6 +100,8 @@ _ARITH = {
     "arith.sub": I.SUB,
     "arith.mul": I.MUL,
     "arith.div": I.DIV,
+    "arith.min": I.MIN,
+    "arith.max": I.MAX,
 }
 _UNARY = {
     "arith.neg": I.NEG,

@@ -53,6 +53,8 @@ opcode that takes none, a constant index outside the pool, and an unknown mode.
 | `ATANH` | `0x0c` | Rd, Ra | Rd <- atanh(Ra) |
 | `SCALE` | `0x0d` | Rd, Ra, `<const>` | Rd <- Ra * c |
 | `ADDI` | `0x0e` | Rd, Ra, `<const>` | Rd <- Ra + c |
+| `MIN` | `0x0f` | Rd, Ra, Rb | Rd <- min(Ra, Rb) |
+| `MAX` | `0x10` | Rd, Ra, Rb | Rd <- max(Ra, Rb) |
 | `QLOAD` | `0x20` | Qd, `<const>` | Qd <- canonical state with r = c |
 | `QSTORE` | `0x21` | Qa, `<addr>` | mem[addr], mem[addr+1] <- r, eta |
 | `QMOV` | `0x22` | Qd, Qa | Qd <- Qa |
@@ -71,7 +73,6 @@ opcode that takes none, a constant index outside the pool, and an unknown mode.
 | `QMEASURE` | `0x2f` | Rd, Qa, `<meas>` | Rd <- measure(Qa) |
 | `QNORM` | `0x30` | Qd, Qa | Qd <- normalize(Qa) |
 | `QIMAG` | `0x31` | Rd, Qa | Rd <- eta(Qa), signed |
-
 
 ## Assembly syntax
 

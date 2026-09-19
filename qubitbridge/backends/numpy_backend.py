@@ -59,6 +59,8 @@ class NumpyBackend(VectorBackend):
     def mul(self, x, y): return x * y
     def div(self, x, y): return x / y
     def neg(self, x): return -x
+    def minimum(self, x, y): return np.minimum(x, y)
+    def maximum(self, x, y): return np.maximum(x, y)
     def tanh(self, x): return np.tanh(x)
 
     def atanh(self, x):

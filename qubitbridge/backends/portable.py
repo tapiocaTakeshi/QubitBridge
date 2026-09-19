@@ -39,6 +39,8 @@ class PortableBackend(VectorBackend):
     def mul(self, x, y): return [a * b for a, b in zip(x, y)]
     def div(self, x, y): return [a / b for a, b in zip(x, y)]
     def neg(self, x): return [-a for a in x]
+    def minimum(self, x, y): return [min(a, b) for a, b in zip(x, y)]
+    def maximum(self, x, y): return [max(a, b) for a, b in zip(x, y)]
     def tanh(self, x): return [math.tanh(a) for a in x]
 
     def atanh(self, x):

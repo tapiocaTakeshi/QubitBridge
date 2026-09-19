@@ -24,6 +24,8 @@ SOURCE = """
         QSTORE    Q2, [0]
         LOAD      R9, [0]
         SCALE     R9, R9, -2.5
+        MIN       R10, R4, R5
+        MAX       R11, R4, R5
         HALT
 """
 

@@ -67,6 +67,8 @@ class Op(IntEnum):
     ATANH = 0x0C        # Rd <- atanh(Ra)
     SCALE = 0x0D        # Rd <- Ra * const[imm]
     ADDI = 0x0E         # Rd <- Ra + const[imm]
+    MIN = 0x0F          # Rd <- min(Ra, Rb)
+    MAX = 0x10          # Rd <- max(Ra, Rb)
 
     QLOAD = 0x20        # Qd <- state(r = const[imm])
     QSTORE = 0x21       # mem[imm], mem[imm+1] <- r, eta of Qa
@@ -139,6 +141,8 @@ SPECS: dict[Op, Spec] = {s.op: s for s in (
     _s(Op.ATANH, R, R, _, IMM_NONE, "Rd <- atanh(Ra)"),
     _s(Op.SCALE, R, R, _, IMM_CONST, "Rd <- Ra * c"),
     _s(Op.ADDI, R, R, _, IMM_CONST, "Rd <- Ra + c"),
+    _s(Op.MIN, R, R, R, IMM_NONE, "Rd <- min(Ra, Rb)"),
+    _s(Op.MAX, R, R, R, IMM_NONE, "Rd <- max(Ra, Rb)"),
 
     _s(Op.QLOAD, Q, _, _, IMM_CONST, "Qd <- canonical state with r = c"),
     _s(Op.QSTORE, _, Q, _, IMM_ADDR, "mem[addr], mem[addr+1] <- r, eta"),
