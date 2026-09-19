@@ -31,7 +31,7 @@ jobs:
         run: pip install -e '.[numpy]' pyflakes
 
       - name: Lint
-        run: python -m pyflakes qubitbridge tests examples
+        run: python -m pyflakes qubitbridge tests examples benchmarks
 
       - name: Tests
         run: python -m unittest discover -s tests -t . -v
@@ -40,6 +40,14 @@ jobs:
         run: |
           python examples/hello_apqb.py
           python examples/qbnn_layer.py
+
+      - name: Benchmarks
+        # Just confirms they still run and print a table on a shared CI
+        # runner; tests/test_benchmarks.py already checks their numerics.
+        # No --big: the 1,000,000-lane row is for a real measurement, not CI.
+        run: |
+          python benchmarks/qbnn_layer_bench.py
+          python benchmarks/lean_kernel_bench.py
 
   stdlib-only:
     # The toolchain must work with nothing but the standard library.

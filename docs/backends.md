@@ -111,6 +111,56 @@ python3 -m unittest tests.test_arm64 -v
 Measured agreement: every opcode within `3.3e-16`, and the QBNN layer example
 within `5.6e-17`.
 
+## Performance: does batching actually help?
+
+`benchmarks/` answers this by measurement rather than assertion, the same way
+`tests/test_arm64.py` answers "is the emitted code really AArch64" by actually
+running it. Each script compares three ways of computing the same forward
+pass over a batch of `N` samples: a plain Python loop calling a scalar
+reference once per sample (`naive`), one `QVM.run()` call with `lanes=N` on
+the `portable` backend, and the same on the `numpy` backend.
+
+```sh
+python3 benchmarks/qbnn_layer_bench.py     # a QBNN-shaped layer, two sizes
+python3 benchmarks/lean_kernel_bench.py    # a lean 9-instruction kernel
+```
+
+The honest answer is **it depends on the shape of the workload**, and the two
+scripts were chosen to show both sides. Measured on one x86-64 Linux host (4
+cores, CPython 3.11, NumPy 2.4; min of several reps per point):
+
+| workload | N | naive | portable | numpy | numpy vs naive | numpy vs portable |
+|---|---|---|---|---|---|---|
+| 8x8 layer, 833 instrs | 1,000 | 25.2 ms | 36.3 ms | 9.2 ms | **2.7x faster** | 3.9x faster |
+| 8x8 layer, 833 instrs | 100,000 | 2591.7 ms | 6725.6 ms | 901.3 ms | **2.9x faster** | 7.5x faster |
+| lean kernel, 9 instrs | 1,000 | 3.7 ms | 9.4 ms | 8.1 ms | 0.46x (slower) | 1.2x faster |
+| lean kernel, 9 instrs | 1,000,000 | 4059.9 ms | 51734.1 ms | 13582.6 ms | 0.30x (slower) | 3.8x faster |
+
+Two things are true at once:
+
+* **The numpy backend is consistently the fastest way to run a QVM program.**
+  It beats the portable backend in every case here, by 1.2x at small scale up
+  to 9x at 100,000+ lanes. If you are choosing a backend, choose `numpy`
+  (`backend="auto"` already does).
+* **Whether that beats a hand-written scalar loop depends on how much
+  arithmetic is packed into each instruction.** A QBNN-shaped layer does
+  `O(in_dim * out_dim)` multiply-adds per sample; enough of that per
+  instruction lets one vectorized numpy pass over `N` samples beat `N`
+  separate CPython-interpreted multiply-adds, once `N` is in the thousands.
+  A lean kernel (few instructions, each cheap) does not have enough work per
+  instruction to amortize the cost every instruction pays regardless of lane
+  count: a fresh `N`-element array allocation and a full read/write pass over
+  it, with no fusion across instructions. Nine instructions is nine such
+  passes; a tight scalar Python loop pays none of that, so it wins at every
+  scale tested here, up to a million lanes.
+
+Neither the APQB encoding nor "quantum" anything is the source of any speedup
+measured here -- it is exactly what Sec. "Why a virtual QPU and not a
+simulator" in `docs/architecture.md` says it is: batching and vectorization,
+the same kind a classical NumPy or SIMD program gets from processing an array
+instead of a Python loop. Run the scripts yourself (`--big` adds the
+1,000,000-lane row) before trusting any of these numbers on your own hardware.
+
 ## Writing a new backend
 
 Subclass `qubitbridge.backends.base.Backend`, implement the lane plumbing

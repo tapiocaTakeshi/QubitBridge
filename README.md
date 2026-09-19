@@ -154,6 +154,20 @@ python3 examples/hello_apqb.py    # x*y down all four layers, plus the emitted N
 python3 examples/qbnn_layer.py    # a QBNN layer from the paper, batched over SPMD lanes
 ```
 
+## Does it actually run faster?
+
+```sh
+python3 benchmarks/qbnn_layer_bench.py
+python3 benchmarks/lean_kernel_bench.py
+```
+
+Measured, not asserted: the numpy backend beats a naive Python loop by up to
+2.9x on a QBNN-shaped layer at scale, but *loses* to one on a lean kernel at
+every batch size tested, up to a million lanes -- it depends on how much
+arithmetic is packed into each instruction, not on lane count alone. See
+`docs/backends.md#performance-does-batching-actually-help` for the numbers
+and why.
+
 ## Tests
 
 ```sh
