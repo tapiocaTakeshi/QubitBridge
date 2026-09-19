@@ -24,18 +24,23 @@ machine, but the same *shape* of result:
 
     8x8 layer, 833 QVM instructions:
         N          naive(ms)  portable(ms)  numpy(ms)  numpy/naive  numpy/portable
-        1,000          25.3          36.7        9.8         2.6x            3.7x
-        10,000        256.8         418.3       90.2         2.8x            4.6x
-        100,000     2,596.7       8,186.1      912.1         2.8x            9.0x
+        1,000          24.9          23.2        9.2         2.7x            2.5x
+        10,000        253.1         233.1       87.7         2.9x            2.7x
+        100,000     2,630.0       2,768.7      927.7         2.8x            3.0x
 
-The numpy backend beats a naive per-sample Python loop once there is enough
-arithmetic per sample (larger in_dim/out_dim) and enough lanes (>= ~1,000) to
-amortize each instruction's Python-level dispatch and array allocation. Below
-that -- a tiny layer, or a small batch -- the portable and even the numpy
-backend can be *slower* than plain Python; see lean_kernel_bench.py for the
-sharper version of that same result. The portable backend is essentially
-never the right choice for a real batch: it is consistently the slowest of
-the three here.
+The numpy backend beats both the naive per-sample loop and the portable
+backend once there is enough arithmetic per sample (larger in_dim/out_dim)
+and enough lanes (>= ~1,000) to amortize each instruction's per-call
+overhead: array allocation for numpy, CPython bytecode dispatch either way.
+Below that -- a tiny layer, or a small batch -- numpy can be the *slowest*
+of the three; see lean_kernel_bench.py for a kernel small enough that numpy
+never wins, at any scale. Portable and naive stay close to each other
+throughout (within about 20%) because both are, fundamentally, a Python
+loop doing scalar arithmetic; numpy is the odd one out in both directions,
+winning big when there's enough work per instruction and losing when there
+isn't. There is no backend that is "the fast one" independent of the
+workload -- see docs/backends.md's Performance section for the fuller
+picture, including apqb_pattern_bench.py's result.
 """
 
 from __future__ import annotations

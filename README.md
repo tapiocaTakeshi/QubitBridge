@@ -157,16 +157,21 @@ python3 examples/qbnn_layer.py    # a QBNN layer from the paper, batched over SP
 ## Does it actually run faster?
 
 ```sh
-python3 benchmarks/qbnn_layer_bench.py
-python3 benchmarks/lean_kernel_bench.py
+python3 benchmarks/qbnn_layer_bench.py       # backend choice, workload shape
+python3 benchmarks/lean_kernel_bench.py      # same, for a lean kernel
+python3 benchmarks/apqb_pattern_bench.py     # the APQB pattern's own cost
 ```
 
-Measured, not asserted: the numpy backend beats a naive Python loop by up to
-2.9x on a QBNN-shaped layer at scale, but *loses* to one on a lean kernel at
-every batch size tested, up to a million lanes -- it depends on how much
-arithmetic is packed into each instruction, not on lane count alone. See
-`docs/backends.md#performance-does-batching-actually-help` for the numbers
-and why.
+Measured, not asserted, and there is no single winner: the numpy backend
+beats a naive Python loop by up to 2.9x on a QBNN-shaped layer at scale, but
+*loses* to both a naive loop and the portable backend on a lean kernel, at
+every batch size tested up to a million lanes -- it depends on how much
+arithmetic is packed into each instruction, not on lane count alone. Using
+the APQB encoding itself (`QENC`/`QMUL`/`QDEC` vs plain `MUL`) costs close to
+nothing extra on numpy, but roughly its instruction-count ratio (~2x-4x) on
+portable. See `docs/backends.md#performance-does-batching-actually-help` for
+the full numbers and why -- run them against your own workload rather than
+assuming any backend, including `auto`'s default, is the fastest one.
 
 ## Tests
 

@@ -11,22 +11,32 @@ the equivalent qubitbridge.apqb scalar functions directly in a Python loop.
 Findings on one x86-64 Linux host (4 cores, CPython 3.11, NumPy 2.4), min of
 several reps per point:
 
-    N            naive(ms)  portable(ms)  numpy(ms)  numpy/naive  numpy/portable
-    1,000            3.7          9.3          7.6        0.49x          1.22x
-    100,000        403.6       1909.3        799.6        0.50x          2.39x
-    1,000,000     4059.9      51734.1      13582.6        0.30x          3.81x
+    N            naive(ms)  portable(ms)  numpy(ms)  portable/naive  numpy/naive
+    1,000            3.9          2.5          7.8        0.63x          2.01x
+    100,000        409.4        311.6        810.5        0.76x          1.98x
+    1,000,000     4208.7       6312.2      13446.2        1.50x          3.20x
 
-Read this together with qbnn_layer_bench.py's result, not instead of it: the
-numpy backend is consistently the fastest *of the three QVM-adjacent ways to
-run this*, beating the portable backend by 1.2x-3.8x -- but for a kernel this
-short, it never catches a tight, already-optimized scalar Python loop, even
-at a million lanes. Each instruction still allocates a fresh N-element numpy
-array with no fusion across instructions, so nine instructions means nine
-full-array passes; a hand-written scalar loop pays no such per-instruction
-tax. Batching pays off when there is enough arithmetic *per instruction* to
-amortize that -- see the 8x8 case in qbnn_layer_bench.py, where numpy wins by
-2.6x-2.9x over the same kind of naive loop -- not simply because the lane
-count is large.
+For a kernel this short, **neither QVM backend beats a tight, already
+optimized scalar Python loop** at any scale tested, up to a million lanes --
+but the two backends are not interchangeable either: portable is 2x-3.2x
+faster than numpy here, not the other way around. Each numpy instruction
+still allocates a fresh N-element array with no fusion across instructions,
+so nine instructions means nine full-array passes at numpy's per-call
+overhead; portable's plain Python arithmetic on lists has no such per-call
+tax for a kernel this size, so it wins. (Portable's own APQB kernels used to
+add an *extra*, avoidable tax on top of that -- constructing an APQBState
+object per lane per instruction -- fixed in
+qubitbridge/backends/portable.py; that used to make numpy look better than
+it is here by comparison.)
+
+Read this together with qbnn_layer_bench.py's result, not instead of it:
+there numpy wins clearly (2.7x-2.9x over naive Python, 2.5x-3x over portable)
+because the 8x8 layer packs O(in_dim*out_dim) arithmetic into each
+instruction, enough to amortize numpy's per-call cost. Here there isn't.
+Batching pays off when there is enough work *per instruction*, not simply
+because the lane count is large -- and which backend wins depends on that
+too. Measure your own workload with these scripts rather than assuming
+either backend, or `backend="auto"`'s numpy-if-available default, is faster.
 """
 
 from __future__ import annotations

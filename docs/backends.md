@@ -125,34 +125,52 @@ python3 benchmarks/qbnn_layer_bench.py     # a QBNN-shaped layer, two sizes
 python3 benchmarks/lean_kernel_bench.py    # a lean 9-instruction kernel
 ```
 
-The honest answer is **it depends on the shape of the workload**, and the two
-scripts were chosen to show both sides. Measured on one x86-64 Linux host (4
-cores, CPython 3.11, NumPy 2.4; min of several reps per point):
+The honest answer is **it depends on the shape of the workload, and there is
+no backend that wins everywhere** -- not even numpy. The three scripts were
+chosen to show that plainly rather than to lead to one recommendation.
+Measured on one x86-64 Linux host (4 cores, CPython 3.11, NumPy 2.4; min of
+several reps per point):
 
-| workload | N | naive | portable | numpy | numpy vs naive | numpy vs portable |
-|---|---|---|---|---|---|---|
-| 8x8 layer, 833 instrs | 1,000 | 25.2 ms | 36.3 ms | 9.2 ms | **2.7x faster** | 3.9x faster |
-| 8x8 layer, 833 instrs | 100,000 | 2591.7 ms | 6725.6 ms | 901.3 ms | **2.9x faster** | 7.5x faster |
-| lean kernel, 9 instrs | 1,000 | 3.7 ms | 9.4 ms | 8.1 ms | 0.46x (slower) | 1.2x faster |
-| lean kernel, 9 instrs | 1,000,000 | 4059.9 ms | 51734.1 ms | 13582.6 ms | 0.30x (slower) | 3.8x faster |
+| workload | N | naive | portable | numpy | fastest |
+|---|---|---|---|---|---|
+| 8x8 layer, 833 instrs | 1,000 | 24.9 ms | 23.2 ms | 9.2 ms | **numpy**, 2.5-2.7x |
+| 8x8 layer, 833 instrs | 100,000 | 2630.0 ms | 2768.7 ms | 927.7 ms | **numpy**, 2.8-3.0x |
+| lean kernel, 9 instrs | 1,000 | 3.9 ms | 2.5 ms | 7.8 ms | **naive**, 1.6-3.2x |
+| lean kernel, 9 instrs | 1,000,000 | 4208.7 ms | 6312.2 ms | 13446.2 ms | **naive**, 1.5-3.2x |
+| APQB pattern (k=16 product), portable | 500,000 | -- | classical 2287 ms | apqb 7321 ms | classical, 3.2x |
+| APQB pattern (k=16 product), numpy | 500,000 | -- | classical 8870 ms | apqb 9338 ms | classical, 1.05x |
 
-Two things are true at once:
+Three things are true at once, and none of them is "always pick numpy":
 
-* **The numpy backend is consistently the fastest way to run a QVM program.**
-  It beats the portable backend in every case here, by 1.2x at small scale up
-  to 9x at 100,000+ lanes. If you are choosing a backend, choose `numpy`
-  (`backend="auto"` already does).
-* **Whether that beats a hand-written scalar loop depends on how much
-  arithmetic is packed into each instruction.** A QBNN-shaped layer does
-  `O(in_dim * out_dim)` multiply-adds per sample; enough of that per
-  instruction lets one vectorized numpy pass over `N` samples beat `N`
-  separate CPython-interpreted multiply-adds, once `N` is in the thousands.
-  A lean kernel (few instructions, each cheap) does not have enough work per
-  instruction to amortize the cost every instruction pays regardless of lane
-  count: a fresh `N`-element array allocation and a full read/write pass over
-  it, with no fusion across instructions. Nine instructions is nine such
-  passes; a tight scalar Python loop pays none of that, so it wins at every
-  scale tested here, up to a million lanes.
+* **Which backend wins depends on how much arithmetic is packed into each
+  instruction, not on lane count.** The 8x8 layer does `O(in_dim * out_dim)`
+  multiply-adds per sample; enough of that per instruction lets one
+  vectorized numpy pass over `N` samples beat both a naive Python loop and
+  the portable backend, once `N` is in the thousands. The lean kernel (few
+  instructions, each cheap) doesn't have enough work per instruction to
+  amortize numpy's per-instruction cost -- a fresh `N`-element array
+  allocation and a full read/write pass, with no fusion across instructions
+  -- so numpy *loses* to both alternatives here, at every scale tested, up to
+  a million lanes. `benchmarks/apqb_pattern_bench.py` isolates the same
+  effect one level down: it compares the APQB `QENC`/`QMUL`/`QDEC` pattern
+  against the plain classical `MUL` pattern for the *same* product, and
+  finds close to zero extra cost on numpy (every op is already a vectorized
+  array pass) but a real, instruction-count-proportional cost on portable.
+* **The portable backend is a legitimate choice for small or lean workloads,
+  not just a slow reference implementation.** It beat numpy outright in the
+  lean-kernel case above. It used to be worse than this table shows: an
+  earlier version constructed an `APQBState` object per lane on every APQB
+  instruction, which made the APQB pattern cost 8x-36x a plain classical one
+  instead of the ~2x-4x its extra instructions actually cost; fixing that
+  (working on raw `(r, eta)` floats instead, in
+  `qubitbridge/backends/portable.py`) is what makes the comparison in this
+  table fair.
+* **Neither the APQB encoding nor "quantum" anything is the source of any
+  number above.** Every comparison here is an ordinary vectorization-vs-
+  interpreter-overhead trade-off, the same kind a plain NumPy or SIMD program
+  faces. `backend="auto"` still prefers numpy when it's importable, because
+  that is a reasonable default, not because it is always the fastest choice
+  -- run the benchmarks against your own workload before assuming it is.
 
 Neither the APQB encoding nor "quantum" anything is the source of any speedup
 measured here -- it is exactly what Sec. "Why a virtual QPU and not a

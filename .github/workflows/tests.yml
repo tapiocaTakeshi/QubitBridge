@@ -48,6 +48,7 @@ jobs:
         run: |
           python benchmarks/qbnn_layer_bench.py
           python benchmarks/lean_kernel_bench.py
+          python benchmarks/apqb_pattern_bench.py
 
   stdlib-only:
     # The toolchain must work with nothing but the standard library.

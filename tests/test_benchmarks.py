@@ -8,6 +8,7 @@ bit-rotting: the reference math must still match what the QVM computes.
 
 import unittest
 
+from benchmarks.apqb_pattern_bench import apqb_chain, check_agreement, classical_chain
 from benchmarks.lean_kernel_bench import PROGRAM, scalar_reference
 from benchmarks.qbnn_layer_bench import build_ir, make_weights, reference
 from qubitbridge.asm import assemble
@@ -55,6 +56,21 @@ class TestLeanKernelBench(unittest.TestCase):
             got = (result.r[2][0], result.r[3][0], result.r[4][0], result.r[5][0])
             for g, t in zip(got, want):
                 self.assertAlmostEqual(g, t, places=10)
+
+
+class TestApqbPatternBench(unittest.TestCase):
+    def test_classical_and_apqb_chains_agree(self):
+        """The two patterns compared must actually compute the same thing."""
+        for k in (2, 3, 4, 8, 16):
+            check_agreement(classical_chain(k), apqb_chain(k), k)
+
+    def test_apqb_chain_has_roughly_double_the_instructions(self):
+        for k in (2, 4, 8, 16):
+            classical = classical_chain(k)
+            apqb = apqb_chain(k)
+            # k encodes + (k-1) muls + 1 decode + 1 halt, vs (k-1) muls + 1 halt.
+            self.assertEqual(len(apqb.program.code), 2 * k + 1)
+            self.assertEqual(len(classical.program.code), k)
 
 
 if __name__ == "__main__":
